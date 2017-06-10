@@ -67,20 +67,23 @@ func injectEnviron() {
 		return
 	}
 
-	sess := session.New()
+	sess, err := session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	})
+	if err != nil {
+		trace(err)
+		trace("failed to create session")
+		return
+	}
 	if *sess.Config.Region == "" {
-		if region := os.Getenv("AWS_DEFAULT_REGION"); region != "" {
-			sess.Config.Region = aws.String(region)
-		} else {
-			trace("no explict region configuration. So now retriving ec2metadata...")
-			region, err := ec2metadata.New(sess).Region()
-			if err != nil {
-				trace(err)
-				trace("could not find region configuration")
-				return
-			}
-			sess.Config.Region = aws.String(region)
+		trace("no explict region configuration. So now retriving ec2metadata...")
+		region, err := ec2metadata.New(sess).Region()
+		if err != nil {
+			trace(err)
+			trace("could not find region configuration")
+			return
 		}
+		sess.Config.Region = aws.String(region)
 	}
 
 	svc := ssm.New(sess)
