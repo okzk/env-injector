@@ -96,8 +96,8 @@ func injectEnviron() {
 		return
 	}
 
-	if len(result.InvalidParameters) != 0 {
-		tracef("invalid parameters: %v", result.InvalidParameters)
+	for _, key := range result.InvalidParameters {
+		tracef("invalid parameter: %s", *key)
 	}
 	for _, param := range result.Parameters {
 		key := strings.TrimPrefix(*param.Name, prefix)
