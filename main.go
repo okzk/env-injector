@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
@@ -86,7 +87,14 @@ func injectEnviron() {
 		sess.Config.Region = aws.String(region)
 	}
 
-	svc := ssm.New(sess)
+	var svc *ssm.SSM
+	if arn := os.Getenv("ENV_INJECTOR_ASSUME_ROLE_ARN"); arn != "" {
+		creds := stscreds.NewCredentials(sess, arn)
+		svc = ssm.New(sess, &aws.Config{Credentials: creds})
+	} else {
+		svc = ssm.New(sess)
+	}
+
 	result, err := svc.GetParameters(&ssm.GetParametersInput{
 		Names:          names,
 		WithDecryption: aws.Bool(true),
