@@ -77,7 +77,7 @@ func injectEnviron() {
 		return
 	}
 	if *sess.Config.Region == "" {
-		trace("no explict region configuration. So now retriving ec2metadata...")
+		trace("no explicit region configuration. So now retrieving ec2metadata...")
 		region, err := ec2metadata.New(sess).Region()
 		if err != nil {
 			trace(err)
