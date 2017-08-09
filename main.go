@@ -95,21 +95,26 @@ func injectEnviron() {
 		svc = ssm.New(sess)
 	}
 
-	result, err := svc.GetParameters(&ssm.GetParametersInput{
-		Names:          names,
-		WithDecryption: aws.Bool(true),
-	})
-	if err != nil {
-		trace(err)
-		return
-	}
+	// 'GetParameters' fails entirely when any one of parameters is not permitted to get.
+	// So call 'GetParameters' one by one.
+	for _, n := range names {
+		result, err := svc.GetParameters(&ssm.GetParametersInput{
+			Names:          []*string{n},
+			WithDecryption: aws.Bool(true),
+		})
+		if err != nil {
+			tracef("failed to get: %s", *n)
+			trace(err)
+			continue
+		}
 
-	for _, key := range result.InvalidParameters {
-		tracef("invalid parameter: %s", *key)
-	}
-	for _, param := range result.Parameters {
-		key := strings.TrimPrefix(*param.Name, prefix)
-		os.Setenv(key, *param.Value)
-		tracef("env injected: %s", key)
+		for _, key := range result.InvalidParameters {
+			tracef("invalid parameter: %s", *key)
+		}
+		for _, param := range result.Parameters {
+			key := strings.TrimPrefix(*param.Name, prefix)
+			os.Setenv(key, *param.Value)
+			tracef("env injected: %s", key)
+		}
 	}
 }
