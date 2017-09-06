@@ -9,11 +9,15 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 )
 
 var verbose = os.Getenv("ENV_INJECTOR_VERBOSE") == "1"
+
+// For lazy initialization
+var service *ssm.SSM
 
 func main() {
 	injectEnviron()
@@ -46,9 +50,50 @@ func tracef(format string, v ...interface{}) {
 }
 
 func injectEnviron() {
+	injectEnvironByPath()
+	injectEnvironByPrefix()
+}
+
+func injectEnvironByPath() {
+	path := os.Getenv("ENV_INJECTOR_PATH")
+	if path == "" {
+		trace("no parameter path specified, skipping injection by path")
+		return
+	}
+	tracef("parameter path: %s", path)
+
+	svc := getSSMService()
+	if svc == nil {
+		return
+	}
+
+	result, err := svc.GetParametersByPath(&ssm.GetParametersByPathInput{
+		Path:           aws.String(path),
+		WithDecryption: aws.Bool(true),
+	})
+	if err != nil {
+		tracef("failed to get by path: %s", path)
+		trace(err)
+	}
+
+	for _, param := range result.Parameters {
+		key, err := filepath.Rel(path, aws.StringValue(param.Name))
+		if err != nil {
+			trace(err)
+			continue
+		}
+		if os.Getenv(key) == "" {
+			os.Setenv(key, aws.StringValue(param.Value))
+			tracef("env injected: %s", key)
+		}
+	}
+}
+
+func injectEnvironByPrefix() {
 	prefix := os.Getenv("ENV_INJECTOR_PREFIX")
+
 	if prefix == "" {
-		trace("no parameter prefix specified, skipping injection")
+		trace("no parameter prefix specified, skipping injection by prefix")
 		return
 	}
 	tracef("parameter prefix: %s", prefix)
@@ -64,35 +109,13 @@ func injectEnviron() {
 		}
 	}
 	if len(names) == 0 {
-		trace("nothing to be injected")
+		trace("nothing to be injected by prefix")
 		return
 	}
 
-	sess, err := session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-	})
-	if err != nil {
-		trace(err)
-		trace("failed to create session")
+	svc := getSSMService()
+	if svc == nil {
 		return
-	}
-	if *sess.Config.Region == "" {
-		trace("no explicit region configuration. So now retrieving ec2metadata...")
-		region, err := ec2metadata.New(sess).Region()
-		if err != nil {
-			trace(err)
-			trace("could not find region configuration")
-			return
-		}
-		sess.Config.Region = aws.String(region)
-	}
-
-	var svc *ssm.SSM
-	if arn := os.Getenv("ENV_INJECTOR_ASSUME_ROLE_ARN"); arn != "" {
-		creds := stscreds.NewCredentials(sess, arn)
-		svc = ssm.New(sess, &aws.Config{Credentials: creds})
-	} else {
-		svc = ssm.New(sess)
 	}
 
 	// 'GetParameters' fails entirely when any one of parameters is not permitted to get.
@@ -109,12 +132,46 @@ func injectEnviron() {
 		}
 
 		for _, key := range result.InvalidParameters {
-			tracef("invalid parameter: %s", *key)
+			tracef("invalid parameter: %s", aws.StringValue(key))
 		}
 		for _, param := range result.Parameters {
-			key := strings.TrimPrefix(*param.Name, prefix)
-			os.Setenv(key, *param.Value)
+			key := strings.TrimPrefix(aws.StringValue(param.Name), prefix)
+			os.Setenv(key, aws.StringValue(param.Value))
 			tracef("env injected: %s", key)
 		}
 	}
+}
+
+// Initialize SSM service lazily, and return it.
+func getSSMService() *ssm.SSM {
+	if service != nil {
+		return service
+	}
+
+	sess, err := session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	})
+	if err != nil {
+		trace(err)
+		trace("failed to create session")
+		return nil
+	}
+	if *sess.Config.Region == "" {
+		trace("no explicit region configuration. So now retrieving ec2metadata...")
+		region, err := ec2metadata.New(sess).Region()
+		if err != nil {
+			trace(err)
+			trace("could not find region configuration")
+			return nil
+		}
+		sess.Config.Region = aws.String(region)
+	}
+
+	if arn := os.Getenv("ENV_INJECTOR_ASSUME_ROLE_ARN"); arn != "" {
+		creds := stscreds.NewCredentials(sess, arn)
+		service = ssm.New(sess, &aws.Config{Credentials: creds})
+	} else {
+		service = ssm.New(sess)
+	}
+	return service
 }
