@@ -67,24 +67,33 @@ func injectEnvironByPath() {
 		return
 	}
 
-	result, err := svc.GetParametersByPath(&ssm.GetParametersByPathInput{
-		Path:           aws.String(path),
-		WithDecryption: aws.Bool(true),
-	})
-	if err != nil {
-		tracef("failed to get by path: %s", path)
-		trace(err)
-	}
-
-	for _, param := range result.Parameters {
-		key, err := filepath.Rel(path, aws.StringValue(param.Name))
+	var nextToken *string
+	for {
+		result, err := svc.GetParametersByPath(&ssm.GetParametersByPathInput{
+			Path:           aws.String(path),
+			WithDecryption: aws.Bool(true),
+			NextToken:      nextToken,
+		})
 		if err != nil {
+			tracef("failed to get by path: %s", path)
 			trace(err)
-			continue
+			return
 		}
-		if os.Getenv(key) == "" {
-			os.Setenv(key, aws.StringValue(param.Value))
-			tracef("env injected: %s", key)
+
+		for _, param := range result.Parameters {
+			key, err := filepath.Rel(path, aws.StringValue(param.Name))
+			if err != nil {
+				trace(err)
+				continue
+			}
+			if os.Getenv(key) == "" {
+				os.Setenv(key, aws.StringValue(param.Value))
+				tracef("env injected: %s", key)
+			}
+		}
+		nextToken = result.NextToken
+		if nextToken == nil || aws.StringValue(nextToken) == "" {
+			break
 		}
 	}
 }
