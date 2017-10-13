@@ -1,6 +1,6 @@
 language: go
 go:
-  - master
+  - 1.9.1
 before_install:
   - go get -v github.com/aws/aws-sdk-go
 script:
