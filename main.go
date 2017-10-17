@@ -156,7 +156,7 @@ func getSSMService() *ssm.SSM {
 		log.Fatalf("failed to create a new session.\n %v", err)
 	}
 	if *sess.Config.Region == "" {
-		trace("no explicit region configuration. So now retrieving ec2metadata...")
+		trace("no explicit region configurations. So now retrieving ec2metadata...")
 		region, err := ec2metadata.New(sess).Region()
 		if err != nil {
 			trace(err)
