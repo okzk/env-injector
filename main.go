@@ -63,9 +63,6 @@ func injectEnvironByPath() {
 	tracef("parameter path: %s", path)
 
 	svc := getSSMService()
-	if svc == nil {
-		return
-	}
 
 	var nextToken *string
 	for {
@@ -75,9 +72,7 @@ func injectEnvironByPath() {
 			NextToken:      nextToken,
 		})
 		if err != nil {
-			tracef("failed to get by path: %s", path)
-			trace(err)
-			return
+			log.Fatalf("ssm:GetParametersByPath failed. (path: %s)\n %v", path, err)
 		}
 
 		for _, param := range result.Parameters {
@@ -123,9 +118,6 @@ func injectEnvironByPrefix() {
 	}
 
 	svc := getSSMService()
-	if svc == nil {
-		return
-	}
 
 	// 'GetParameters' fails entirely when any one of parameters is not permitted to get.
 	// So call 'GetParameters' one by one.
@@ -161,17 +153,14 @@ func getSSMService() *ssm.SSM {
 		SharedConfigState: session.SharedConfigEnable,
 	})
 	if err != nil {
-		trace(err)
-		trace("failed to create session")
-		return nil
+		log.Fatalf("failed to create a new session.\n %v", err)
 	}
 	if *sess.Config.Region == "" {
 		trace("no explicit region configuration. So now retrieving ec2metadata...")
 		region, err := ec2metadata.New(sess).Region()
 		if err != nil {
 			trace(err)
-			trace("could not find region configuration")
-			return nil
+			log.Fatalf("could not find region configurations")
 		}
 		sess.Config.Region = aws.String(region)
 	}
