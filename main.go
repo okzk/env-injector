@@ -20,6 +20,9 @@ var verbose = os.Getenv("ENV_INJECTOR_VERBOSE") == "1"
 var service *ssm.SSM
 
 func main() {
+	log.SetFlags(0)
+	log.SetPrefix("[env-injector] ")
+
 	injectEnviron()
 
 	args := os.Args
