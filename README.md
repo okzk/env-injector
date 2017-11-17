@@ -5,10 +5,7 @@ A simple tool to inject credentials into environment variables from AWS Systems 
 
 ## Install
 
-```bash
-$ go get github.com/okzk/env-injector
-
-```
+Download from [releases](https://github.com/okzk/env-injector/releases).
 
 ## How to use
 
