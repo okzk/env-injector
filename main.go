@@ -29,6 +29,7 @@ func main() {
 }
 
 func injectEnviron() {
+	injectEnvironSecretManager()
 	injectEnvironByPath()
 	injectEnvironByPrefix()
 }

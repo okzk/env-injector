@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"log"
 	"os"
@@ -14,7 +15,8 @@ import (
 var services *awsServices
 
 type awsServices struct {
-	ssm *ssm.SSM
+	ssm            *ssm.SSM
+	secretsManager *secretsmanager.SecretsManager
 }
 
 func newAWSServices() *awsServices {
@@ -36,8 +38,15 @@ func newAWSServices() *awsServices {
 
 	if arn := os.Getenv("ENV_INJECTOR_ASSUME_ROLE_ARN"); arn != "" {
 		creds := stscreds.NewCredentials(sess, arn)
-		return &awsServices{ssm: ssm.New(sess, &aws.Config{Credentials: creds})}
+		return &awsServices{
+			ssm:            ssm.New(sess, &aws.Config{Credentials: creds}),
+			secretsManager: secretsmanager.New(sess, &aws.Config{Credentials: creds}),
+		}
 	} else {
+		return &awsServices{
+			ssm:            ssm.New(sess),
+			secretsManager: secretsmanager.New(sess),
+		}
 		return &awsServices{ssm: ssm.New(sess)}
 	}
 }
