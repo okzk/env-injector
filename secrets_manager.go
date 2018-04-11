@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func injectEnvironSecretManager(name string) {
+func injectEnvironSecretManager(name string, decorator envKeyDecorator) {
 	tracef("secret name: %s", name)
 
 	svc := getService().secretsManager
@@ -24,6 +24,7 @@ func injectEnvironSecretManager(name string) {
 		log.Fatalf("secretsmanager:GetSecretValue returns invalid json. (name: %s)\n %v", name, err)
 	}
 	for key, val := range secrets {
+		key = decorator.decorate(key)
 		if os.Getenv(key) == "" {
 			os.Setenv(key, val)
 			tracef("env injected: %s", key)

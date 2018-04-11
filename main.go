@@ -29,14 +29,20 @@ func main() {
 }
 
 func injectEnviron() {
+	if path := os.Getenv("ENV_INJECTOR_META_CONFIG"); path != "" {
+		injectEnvironViaMetaConfig(path)
+	} else {
+		trace("no meta config path specified, skipping injection via meta config")
+	}
+
 	if name := os.Getenv("ENV_INJECTOR_SECRET_NAME"); name != "" {
-		injectEnvironSecretManager(name)
+		injectEnvironSecretManager(name, noop)
 	} else {
 		trace("no secret name specified, skipping injection by SecretsManager")
 	}
 
 	if path := os.Getenv("ENV_INJECTOR_PATH"); path != "" {
-		injectEnvironByPath(path)
+		injectEnvironByPath(path, noop)
 	} else {
 		trace("no parameter path specified, skipping injection by path")
 	}

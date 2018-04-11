@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func injectEnvironByPath(path string) {
+func injectEnvironByPath(path string, decorator envKeyDecorator) {
 	tracef("parameter path: %s", path)
 
 	svc := getService().ssm
@@ -30,6 +30,7 @@ func injectEnvironByPath(path string) {
 				trace(err)
 				continue
 			}
+			key = decorator.decorate(key)
 			if os.Getenv(key) == "" {
 				os.Setenv(key, aws.StringValue(param.Value))
 				tracef("env injected: %s", key)
