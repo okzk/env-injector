@@ -8,16 +8,10 @@ import (
 	"os"
 )
 
-func injectEnvironSecretManager() {
-	name := os.Getenv("ENV_INJECTOR_SECRET_NAME")
-	if name == "" {
-		trace("no secret name specified, skipping injection by SecretsManager")
-		return
-	}
+func injectEnvironSecretManager(name string) {
 	tracef("secret name: %s", name)
 
 	svc := getService().secretsManager
-
 	ret, err := svc.GetSecretValue(&secretsmanager.GetSecretValueInput{
 		SecretId: aws.String(name),
 	})

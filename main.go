@@ -29,7 +29,21 @@ func main() {
 }
 
 func injectEnviron() {
-	injectEnvironSecretManager()
-	injectEnvironByPath()
-	injectEnvironByPrefix()
+	if name := os.Getenv("ENV_INJECTOR_SECRET_NAME"); name != "" {
+		injectEnvironSecretManager(name)
+	} else {
+		trace("no secret name specified, skipping injection by SecretsManager")
+	}
+
+	if path := os.Getenv("ENV_INJECTOR_PATH"); path != "" {
+		injectEnvironByPath(path)
+	} else {
+		trace("no parameter path specified, skipping injection by path")
+	}
+
+	if prefix := os.Getenv("ENV_INJECTOR_PREFIX"); prefix != "" {
+		injectEnvironByPrefix(prefix)
+	} else {
+		trace("no parameter prefix specified, skipping injection by prefix")
+	}
 }

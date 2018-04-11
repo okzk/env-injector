@@ -9,16 +9,10 @@ import (
 	"strings"
 )
 
-func injectEnvironByPath() {
-	path := os.Getenv("ENV_INJECTOR_PATH")
-	if path == "" {
-		trace("no parameter path specified, skipping injection by path")
-		return
-	}
+func injectEnvironByPath(path string) {
 	tracef("parameter path: %s", path)
 
 	svc := getService().ssm
-
 	var nextToken *string
 	for {
 		result, err := svc.GetParametersByPath(&ssm.GetParametersByPathInput{
@@ -48,13 +42,7 @@ func injectEnvironByPath() {
 	}
 }
 
-func injectEnvironByPrefix() {
-	prefix := os.Getenv("ENV_INJECTOR_PREFIX")
-
-	if prefix == "" {
-		trace("no parameter prefix specified, skipping injection by prefix")
-		return
-	}
+func injectEnvironByPrefix(prefix string) {
 	tracef("parameter prefix: %s", prefix)
 	if !strings.HasSuffix(prefix, ".") {
 		prefix += "."
