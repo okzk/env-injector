@@ -42,12 +42,10 @@ func newAWSServices() *awsServices {
 			ssm:            ssm.New(sess, &aws.Config{Credentials: creds}),
 			secretsManager: secretsmanager.New(sess, &aws.Config{Credentials: creds}),
 		}
-	} else {
-		return &awsServices{
-			ssm:            ssm.New(sess),
-			secretsManager: secretsmanager.New(sess),
-		}
-		return &awsServices{ssm: ssm.New(sess)}
+	}
+	return &awsServices{
+		ssm:            ssm.New(sess),
+		secretsManager: secretsmanager.New(sess),
 	}
 }
 
