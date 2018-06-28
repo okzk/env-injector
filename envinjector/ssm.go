@@ -1,9 +1,8 @@
-package main
+package envinjector
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ssm"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,7 +20,7 @@ func injectEnvironByPath(path string, decorator envKeyDecorator) {
 			NextToken:      nextToken,
 		})
 		if err != nil {
-			log.Fatalf("ssm:GetParametersByPath failed. (path: %s)\n %v", path, err)
+			logger.Fatalf("ssm:GetParametersByPath failed. (path: %s)\n %v", path, err)
 		}
 
 		for _, param := range result.Parameters {

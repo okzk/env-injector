@@ -1,10 +1,9 @@
-package main
+package envinjector
 
 import (
 	"encoding/json"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
-	"log"
 	"os"
 )
 
@@ -16,12 +15,12 @@ func injectEnvironSecretManager(name string, decorator envKeyDecorator) {
 		SecretId: aws.String(name),
 	})
 	if err != nil {
-		log.Fatalf("secretsmanager:GetSecretValue failed. (name: %s)\n %v", name, err)
+		logger.Fatalf("secretsmanager:GetSecretValue failed. (name: %s)\n %v", name, err)
 	}
 	secrets := make(map[string]string)
 	err = json.Unmarshal([]byte(aws.StringValue(ret.SecretString)), &secrets)
 	if err != nil {
-		log.Fatalf("secretsmanager:GetSecretValue returns invalid json. (name: %s)\n %v", name, err)
+		logger.Fatalf("secretsmanager:GetSecretValue returns invalid json. (name: %s)\n %v", name, err)
 	}
 	for key, val := range secrets {
 		key = decorator.decorate(key)

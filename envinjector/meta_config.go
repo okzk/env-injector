@@ -1,4 +1,4 @@
-package main
+package envinjector
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
@@ -53,7 +53,7 @@ func injectEnvironViaMetaConfig(path string) {
 		WithDecryption: aws.Bool(true),
 	})
 	if err != nil {
-		log.Fatalf("ssm:GetParameter failed. (path: %s)\n %v", path, err)
+		logger.Fatalf("ssm:GetParameter failed. (path: %s)\n %v", path, err)
 	}
 
 	configs := make([]*metaConfig, 0)

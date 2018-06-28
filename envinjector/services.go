@@ -1,4 +1,4 @@
-package main
+package envinjector
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
@@ -7,7 +7,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/ssm"
-	"log"
 	"os"
 )
 
@@ -24,14 +23,14 @@ func newAWSServices() *awsServices {
 		SharedConfigState: session.SharedConfigEnable,
 	})
 	if err != nil {
-		log.Fatalf("failed to create a new session.\n %v", err)
+		logger.Fatalf("failed to create a new session.\n %v", err)
 	}
 	if aws.StringValue(sess.Config.Region) == "" {
 		trace("no explicit region configurations. So now retrieving ec2metadata...")
 		region, err := ec2metadata.New(sess).Region()
 		if err != nil {
 			trace(err)
-			log.Fatalf("could not find region configurations")
+			logger.Fatalf("could not find region configurations")
 		}
 		sess.Config.Region = aws.String(region)
 	}
